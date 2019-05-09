@@ -31,6 +31,12 @@ Led::Led(PinName led, LedType type, LedLogicLevel level, uint32_t period_ms){
     _max_intensity = 1.0f;
     _min_intensity = 0;
     
+    // desactiva el modo de parpadeo
+    _num_blinks = 0;
+    for(uint8_t i=0;i<MaxBlinkCount;i++){
+    	_blinks[i] = 0;
+    }
+
     if(_type == LedOnOffType){
         _out_01 = new DigitalOut(led);
     }
@@ -183,10 +189,39 @@ void Led::updateBlinker(uint32_t ms_blink_on, uint32_t ms_blink_off){
     _ms_blink_off = ms_blink_off;
 }    
 
- 
+
+//------------------------------------------------------------------------------------
+int Led::setBlinkMode(const uint32_t blinks[], uint8_t count){
+	if(count > MaxBlinkCount){
+		return -1;
+	}
+	_num_blinks = count;
+	for(int i=0;i<_num_blinks;i++){
+		_blinks[i] = blinks[i];
+	}
+	_curr_blink = -1;
+	_executeBlinkMode();
+	return 0;
+}
+
+
+
 //------------------------------------------------------------------------------------
 //-- PRIVATE METHODS IMPLEMENTATION --------------------------------------------------
 //------------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------------
+void Led::_executeBlinkMode(){
+	// siguiente parpadeo
+	_curr_blink = (_curr_blink >= (_num_blinks-1))? 0 : (_curr_blink+1);
+	// si es par correponde un ON
+	if(!(_curr_blink & 1)){
+		on(_blinks[_curr_blink]);
+		return;
+	}
+	off(_blinks[_curr_blink]);
+}
 
 
 //------------------------------------------------------------------------------------
@@ -276,14 +311,21 @@ void Led::temporalCb(){
     _tick_ramp.detach();
     _tick_duration.detach();    
     _stat = _bkp_stat;
-    if(_stat == LedIsOff){
-        off(0, (uint8_t)(_min_intensity*100), 0);
+    // si está activado el modo blink en cascada, lo procesa
+    if(_num_blinks > 0){
+    	_executeBlinkMode();
     }
-    else if (_stat == LedIsOn){
-        on(0, (uint8_t)(_max_intensity*100), 0);
-    }
+    // en otro caso lo procesa de forma normal
     else{
-        blink(_ms_blink_on, _ms_blink_off, 0, (uint8_t)(_max_intensity*100), (uint8_t)(_min_intensity*100));
+		if(_stat == LedIsOff){
+			off(0, (uint8_t)(_min_intensity*100), 0);
+		}
+		else if (_stat == LedIsOn){
+			on(0, (uint8_t)(_max_intensity*100), 0);
+		}
+		else{
+			blink(_ms_blink_on, _ms_blink_off, 0, (uint8_t)(_max_intensity*100), (uint8_t)(_min_intensity*100));
+		}
     }
 }
 

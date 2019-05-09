@@ -13,6 +13,7 @@
 #define __Led__H
 
 #include "mbed.h"
+#include <list>
 
    
 class Led{
@@ -78,8 +79,32 @@ class Led{
 	 *	@param ms_blink_off Tiempo de apagado en modo parpadeo (si =0 modo parpadeo desactivado)
 	 */
     void updateBlinker(uint32_t ms_blink_on, uint32_t ms_blink_off);
+
+
+    /**
+     * Establece un modo de parpadeo basado en una lista de temporizaciones
+     * Tiempos en ms--------------  ON  OFF  ON    OFF  ON   OFF
+     * Ej. un parpadeo rápido:    [250, 1000]
+     * Ej. dos parpadeos rápidos: [250, 250, 250, 1000]
+     * Ej. tres parpadeos rápidos:[250, 250, 250, 250, 250, 1000]
+     * Ej. parpadeos lentos:      [500, 500]
+     * Ej. parpadeos rápidos:     [250, 250]
+     * @param blinks Lista de temporizaciones
+     * @param count Número de temporizaciones a realizar hasta un máximo de 16
+	 * @return 0 OK, -1 Error
+     */
+    int setBlinkMode(const uint32_t blinks[], uint8_t count);
   
+
+    /**
+     * Cancela el modo blinking
+     */
+    void cancelBlinkMode(){
+    	_num_blinks = 0;
+    	off();
+    }
   
+
 	/** setDebugChannel()
      *  Instala canal de depuración
      *  @param dbg Logger
@@ -101,6 +126,8 @@ class Led{
     };
     
     static const uint32_t GlitchFilterTimeoutUs = 20000;    /// Por defecto 20ms de timeout antiglitch desde el cambio de nivel
+    static const uint8_t MaxBlinkCount = 16;				/// Máximo nº de parpadeos en la lista de parpadeos consecutivos
+
     uint32_t _id;                                           /// Led id. Coincide con el PinName asociado
     PwmOut* _out;                                           /// Salida pwm
     DigitalOut* _out_01;                                    /// Salida binaria 0 1
@@ -122,6 +149,9 @@ class Led{
     LedStat _bkp_stat;                                      /// Estado backup en modo temporal
     bool _istemp;                                           /// Flag para indicar si el modo temporal está activo
     bool  _debug;                                           /// Canal de depuración
+    uint32_t _blinks[MaxBlinkCount];						/// Lista de parpadeos
+    uint8_t _num_blinks;									/// control del número de parpadeos en la lista
+    int8_t _curr_blink;									    /// indicador del parpadeo actual
   
     
 	/** rampOffCb
@@ -154,6 +184,12 @@ class Led{
      *  @return Intensidad 0 - 1.0f
      */
     double convertIntensity(uint8_t intensity);
+
+
+    /**
+     * Ejecuta la siguiente acción del modo blink
+     */
+    void _executeBlinkMode();
 };
      
 
