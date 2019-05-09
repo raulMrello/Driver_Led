@@ -213,14 +213,16 @@ int Led::setBlinkMode(const uint32_t blinks[], uint8_t count){
 
 //------------------------------------------------------------------------------------
 void Led::_executeBlinkMode(){
-	// siguiente parpadeo
-	_curr_blink = (_curr_blink >= (_num_blinks-1))? 0 : (_curr_blink+1);
-	// si es par correponde un ON
-	if(!(_curr_blink & 1)){
-		on(_blinks[_curr_blink]);
-		return;
+	if(_num_blinks > 0){
+		// siguiente parpadeo
+		_curr_blink = (_curr_blink >= (_num_blinks-1))? 0 : (_curr_blink+1);
+		// si es par correponde un ON
+		if(!(_curr_blink & 1)){
+			on(_blinks[_curr_blink]);
+			return;
+		}
+		off(_blinks[_curr_blink]);
 	}
-	off(_blinks[_curr_blink]);
 }
 
 
