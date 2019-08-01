@@ -13,12 +13,12 @@
 #include "Appconfig.h"
 
 #if ESP_PLATFORM == 1 || (__MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_Driver_Led))
-#include "unity.h"
-#include "mbed.h"
-#include "Heap.h"
 
 /** Requerido para test unitarios ESP-MDF */
 #if ESP_PLATFORM == 1
+#include "unity.h"
+#include "mbed.h"
+#include "Heap.h"
 void (*syslog_print)(const char*level, const char* tag, const char* format, ...) = NULL;
 #define PinName_TX	GPIO_NUM_13
 #define PinName_RX	GPIO_NUM_12
@@ -29,6 +29,9 @@ const PinName LedArray[] =	{PinName_LED_RED_REMOTE, PinName_LED_GREEN_REMOTE, Pi
 
 /** Requerido para test unitarios STM32 */
 #elif __MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_Driver_Led)
+#include "unity.h"
+#include "mbed.h"
+#include "Heap.h"
 #include "unity_test_runner.h"
 /// Configuración MBED_API_uSerial
 #define PinName_TX	PC_10
@@ -126,7 +129,7 @@ static void test_led_init_userial(){
 //------------------------------------------------------------------------------------
 static void test_led_new_locals(){
 	for(int i=0;i<LED_COUNT;i++){
-		led[i] = new Led(LedArray[i], Led::LedOnOffType, Led::OnIsLowLevel, MBED_API_uSerial::getCPU());
+		led[i] = new Led(LedArray[i], Led::LedOnOffType, Led::OnIsHighLevel, MBED_API_uSerial::getCPU());
 		TEST_ASSERT_NOT_NULL(led[i]);
 		led[i]->off();
 	}
