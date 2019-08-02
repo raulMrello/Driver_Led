@@ -8,7 +8,6 @@
 #include "Led.h"
 
 
-
 //------------------------------------------------------------------------------------
 //--- PRIVATE TYPES ------------------------------------------------------------------
 //------------------------------------------------------------------------------------
@@ -23,7 +22,7 @@
 
 //------------------------------------------------------------------------------------
 Led::Led(PinName led, LedType type, LedLogicLevel level, uint32_t period_ms, uSerial_CPU cpu){
-    // Crea objeto
+	// Crea objeto
     _id = (uint32_t)led;
     _debug = false;
     _type = type;
@@ -36,7 +35,6 @@ Led::Led(PinName led, LedType type, LedLogicLevel level, uint32_t period_ms, uSe
     for(uint8_t i=0;i<MaxBlinkCount;i++){
     	_blinks[i] = 0;
     }
-
     if(_type == LedOnOffType){
         _out_01 = new xDigitalOut(led, cpu);
     }
