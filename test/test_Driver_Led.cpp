@@ -41,6 +41,7 @@ const PinName LedArray[] = {PinName_LED_RED_LOCAL, PinName_LED_GREEN_LOCAL, PinN
 #endif
 
 #include "Led.h"
+#include "xLed.h"
 #include "mbed_api_userial.h"
 #include "SerialMon.h"
 
@@ -59,8 +60,13 @@ static const char* _MODULE_ = "[TEST_LED].......";
 //-- REQUIRED HEADERS & COMPONENTS FOR TESTING ---------------------------------------
 //------------------------------------------------------------------------------------
 
-/** Leds a verificar */
+/** Leds locales con pines (locales|remotos) a verificar */
 static Led* led[LED_COUNT];
+bool are_locals = false;
+
+/** Leds remotos a verificar */
+static xLed* xled[LED_COUNT];
+bool are_remotes = false;
 
 /** Puerto serie para pruebas con MBED_API_uSerial */
 static SerialMon* g_serial = NULL;
@@ -113,6 +119,9 @@ static void test_led_init_userial(){
 	}
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "MBED_API_uSerial iniciada!!!");
 	Thread::wait(100);
+	mbed_api_userial.setLoggingLevel(ESP_LOG_WARN);
+	are_locals = false;
+	are_remotes = false;
 }
 
 
@@ -123,6 +132,19 @@ static void test_led_new_locals(){
 		TEST_ASSERT_NOT_NULL(led[i]);
 		led[i]->off();
 	}
+	are_locals = true;
+}
+
+
+//------------------------------------------------------------------------------------
+static void test_led_new_local_led_remote_pins(){
+	uSerial_CPU remote_cpu = (MBED_API_uSerial::getCPU()==uSerial_CPU::CPU_ONBOARD_ESP32)? uSerial_CPU::CPU_ONBOARD_STM32 : uSerial_CPU::CPU_ONBOARD_ESP32;
+	DEBUG_TRACE_I(_EXPR_, _MODULE_, "CPU local=%d, CPU_remota=%d", (uint32_t)MBED_API_uSerial::getCPU(), (uint32_t)remote_cpu);
+	for(int i=0;i<LED_COUNT;i++){
+		led[i] = new Led(LedArray[i], Led::LedOnOffType, Led::OnIsHighLevel, 0, remote_cpu);
+		TEST_ASSERT_NOT_NULL(led[i]);
+	}
+	are_locals = true;
 }
 
 
@@ -131,16 +153,22 @@ static void test_led_new_remotes(){
 	uSerial_CPU remote_cpu = (MBED_API_uSerial::getCPU()==uSerial_CPU::CPU_ONBOARD_ESP32)? uSerial_CPU::CPU_ONBOARD_STM32 : uSerial_CPU::CPU_ONBOARD_ESP32;
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "CPU local=%d, CPU_remota=%d", (uint32_t)MBED_API_uSerial::getCPU(), (uint32_t)remote_cpu);
 	for(int i=0;i<LED_COUNT;i++){
-		led[i] = new Led(LedArray[i], Led::LedOnOffType, Led::OnIsHighLevel, 0, remote_cpu);
-		TEST_ASSERT_NOT_NULL(led[i]);
-		Thread::wait(500);
+		xled[i] = new xLed(LedArray[i], Led::LedOnOffType, Led::OnIsHighLevel, 0, remote_cpu);
+		TEST_ASSERT_NOT_NULL(xled[i]);
 	}
+	are_remotes = true;
 }
+
 
 //------------------------------------------------------------------------------------
 static void test_led_on(){
 	for(int i=0;i<LED_COUNT;i++){
-		led[i]->on();
+		if(are_locals){
+			led[i]->on();
+		}
+		if(are_remotes){
+			xled[i]->on();
+		}
 	}
 }
 
@@ -148,7 +176,11 @@ static void test_led_on(){
 //------------------------------------------------------------------------------------
 static void test_led_off(){
 	for(int i=0;i<LED_COUNT;i++){
-		led[i]->off();
+		if(are_locals)
+			led[i]->off();
+		if(are_remotes){
+			xled[i]->off();
+		}
 	}
 }
 
@@ -157,7 +189,12 @@ static void test_led_off(){
 static void test_led_blink(){
 	const uint32_t blink_sequence[] = {250, 250};
 	for(int i=0;i<LED_COUNT;i++){
-		TEST_ASSERT_EQUAL(led[i]->setBlinkMode(blink_sequence, 2), 0);
+		if(are_locals){
+			TEST_ASSERT_EQUAL(led[i]->setBlinkMode(blink_sequence, 2), 0);
+		}
+		if(are_remotes){
+			TEST_ASSERT_EQUAL(xled[i]->setBlinkMode(blink_sequence, 2), 0);
+		}
 	}
 }
 
@@ -165,7 +202,12 @@ static void test_led_blink(){
 //------------------------------------------------------------------------------------
 static void test_led_destroy(){
 	for(int i=0;i<LED_COUNT;i++){
-		delete(led[i]);
+		if(are_locals){
+			delete(led[i]);
+		}
+		if(are_remotes){
+			delete(xled[i]);
+		}
 	}
 }
 
@@ -181,8 +223,14 @@ TEST_CASE("Inicializacion MBED API uSerial", "[Driver_Led]") {
 
 
 //------------------------------------------------------------------------------------
-TEST_CASE("Crea leds en CPU local", "[Driver_Led]") {
+TEST_CASE("Crea leds y sus pines en CPU local", "[Driver_Led]") {
 	test_led_new_locals();
+}
+
+
+//------------------------------------------------------------------------------------
+TEST_CASE("Crea leds en CPU local con pines remotos", "[Driver_Led]") {
+	test_led_new_local_led_remote_pins();
 }
 
 
@@ -214,51 +262,6 @@ TEST_CASE("Destruye los leds", "[Driver_Led]") {
 	test_led_destroy();
 }
 
-
-
-//---------------------------------------------------------------------------
-TEST_CASE("Test one-shot during 10 sec............", "[Driver_Led]") {
-	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Starting one-shot");
-	uint32_t one_shot[] = {250, 1000};
-	for(int i=0;i<LED_COUNT;i++){
-		TEST_ASSERT_EQUAL(led[i]->setBlinkMode(one_shot, 2), 0);
-	}
-	Thread::wait(10000);
-	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Cancelling blink mode");
-	for(int i=0;i<LED_COUNT;i++){
-		led[i]->cancelBlinkMode();
-	}
-}
-
-
-//---------------------------------------------------------------------------
-TEST_CASE("Test two-shots during 10 sec............", "[Driver_Led]") {
-	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Starting two-shot");
-	uint32_t two_shots[] = {250, 250, 250, 1000};
-	for(int i=0;i<LED_COUNT;i++){
-		TEST_ASSERT_EQUAL(led[i]->setBlinkMode(two_shots, 4), 0);
-	}
-	Thread::wait(10000);
-	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Cancelling blink mode");
-	for(int i=0;i<LED_COUNT;i++){
-		led[i]->cancelBlinkMode();
-	}
-}
-
-
-//---------------------------------------------------------------------------
-TEST_CASE("Test three-shots during 10 sec............", "[Driver_Led]") {
-	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Starting three-shot");
-	uint32_t three_shots[] = {250, 250, 250, 250, 250, 1000};
-	for(int i=0;i<LED_COUNT;i++){
-		TEST_ASSERT_EQUAL(led[i]->setBlinkMode(three_shots, 6), 0);
-	}
-	Thread::wait(10000);
-	DEBUG_TRACE_D(_EXPR_, _MODULE_, "Cancelling blink mode");
-	for(int i=0;i<LED_COUNT;i++){
-		led[i]->cancelBlinkMode();
-	}
-}
 
 
 
