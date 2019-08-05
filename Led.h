@@ -13,6 +13,8 @@
 #define __Led__H
 
 #include "mbed.h"
+#include "xDigitalOut.h"
+#include "xPwmOut.h"
 #include <list>
 
    
@@ -36,8 +38,9 @@ class Led{
      *  @param type Tipo de led (DigitalOut o PwmOut)
      *  @param level Nivel de activación lógico 
      *  @param period Periodo del del pwm en milisegundos
+     *  @param cpu CPU en la que se instala el pin físico
      */
-    Led(PinName led, LedType type, LedLogicLevel level = OnIsHighLevel, uint32_t period_ms = 1);
+    Led(PinName led, LedType type, LedLogicLevel level = OnIsHighLevel, uint32_t period_ms = 1, uSerial_CPU cpu = MBED_API_uSerial::getCPU());
     ~Led();
   
   
@@ -129,11 +132,11 @@ class Led{
     static const uint8_t MaxBlinkCount = 16;				/// Máximo nº de parpadeos en la lista de parpadeos consecutivos
 
     uint32_t _id;                                           /// Led id. Coincide con el PinName asociado
-    PwmOut* _out;                                           /// Salida pwm
-    DigitalOut* _out_01;                                    /// Salida binaria 0 1
-    double _intensity;                                       /// Nivel de intensidad
-    double _max_intensity;                                   /// Máximo nivel de intensidad
-    double _min_intensity;                                   /// Mínimo nivel de intensidad
+    xPwmOut* _out;                                          /// Salida pwm
+    xDigitalOut* _out_01;                                   /// Salida binaria 0 1
+    double _intensity;                                      /// Nivel de intensidad
+    double _max_intensity;                                  /// Máximo nivel de intensidad
+    double _min_intensity;                                  /// Mínimo nivel de intensidad
     LedType _type;                                          /// Tipo de led
     LedLogicLevel _level;                                   /// Nivel lógico para la activación
     LedStat _stat;                                          /// Estado del led

@@ -8,7 +8,6 @@
 #include "Led.h"
 
 
-
 //------------------------------------------------------------------------------------
 //--- PRIVATE TYPES ------------------------------------------------------------------
 //------------------------------------------------------------------------------------
@@ -22,8 +21,8 @@
 
 
 //------------------------------------------------------------------------------------
-Led::Led(PinName led, LedType type, LedLogicLevel level, uint32_t period_ms){
-    // Crea objeto
+Led::Led(PinName led, LedType type, LedLogicLevel level, uint32_t period_ms, uSerial_CPU cpu){
+	// Crea objeto
     _id = (uint32_t)led;
     _debug = false;
     _type = type;
@@ -36,18 +35,32 @@ Led::Led(PinName led, LedType type, LedLogicLevel level, uint32_t period_ms){
     for(uint8_t i=0;i<MaxBlinkCount;i++){
     	_blinks[i] = 0;
     }
-
     if(_type == LedOnOffType){
-        _out_01 = new DigitalOut(led);
+        _out_01 = new xDigitalOut(led, cpu);
     }
     else{
-        _out = new PwmOut(led);
+        _out = new xPwmOut(led, cpu);
         _out->period_ms(_period_ms);
     }    
     _level = level;      
     
     // Deja apagado por defecto
     off(0, 0, 0);
+}
+
+
+//------------------------------------------------------------------------------------
+Led::~Led(){
+	off();
+	_tick_blink.detach();
+	_tick_ramp.detach();
+	_tick_duration.detach();
+	if(_type == LedOnOffType){
+		delete(_out_01);
+	}
+	else{
+		delete(_out);
+	}
 }
 
 
