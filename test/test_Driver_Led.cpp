@@ -60,7 +60,7 @@ static const char* _MODULE_ = "[TEST_LED].......";
 //-- REQUIRED HEADERS & COMPONENTS FOR TESTING ---------------------------------------
 //------------------------------------------------------------------------------------
 
-/** Leds locales con pines (locales|remotos) a verificar */
+/** Leds locales  a verificar */
 static Led* led[LED_COUNT];
 bool are_locals = false;
 
@@ -128,24 +128,13 @@ static void test_led_init_userial(){
 //------------------------------------------------------------------------------------
 static void test_led_new_locals(){
 	for(int i=0;i<LED_COUNT;i++){
-		led[i] = new Led(LedArray[i], Led::LedOnOffType, Led::OnIsHighLevel, 0, MBED_API_uSerial::getCPU());
+		led[i] = new Led(LedArray[i], Led::LedOnOffType, Led::OnIsHighLevel, 0);
 		TEST_ASSERT_NOT_NULL(led[i]);
 		led[i]->off();
 	}
 	are_locals = true;
 }
 
-
-//------------------------------------------------------------------------------------
-static void test_led_new_local_led_remote_pins(){
-	uSerial_CPU remote_cpu = (MBED_API_uSerial::getCPU()==uSerial_CPU::CPU_ONBOARD_ESP32)? uSerial_CPU::CPU_ONBOARD_STM32 : uSerial_CPU::CPU_ONBOARD_ESP32;
-	DEBUG_TRACE_I(_EXPR_, _MODULE_, "CPU local=%d, CPU_remota=%d", (uint32_t)MBED_API_uSerial::getCPU(), (uint32_t)remote_cpu);
-	for(int i=0;i<LED_COUNT;i++){
-		led[i] = new Led(LedArray[i], Led::LedOnOffType, Led::OnIsHighLevel, 0, remote_cpu);
-		TEST_ASSERT_NOT_NULL(led[i]);
-	}
-	are_locals = true;
-}
 
 
 //------------------------------------------------------------------------------------
@@ -225,12 +214,6 @@ TEST_CASE("Inicializacion MBED API uSerial", "[Driver_Led]") {
 //------------------------------------------------------------------------------------
 TEST_CASE("Crea leds y sus pines en CPU local", "[Driver_Led]") {
 	test_led_new_locals();
-}
-
-
-//------------------------------------------------------------------------------------
-TEST_CASE("Crea leds en CPU local con pines remotos", "[Driver_Led]") {
-	test_led_new_local_led_remote_pins();
 }
 
 
