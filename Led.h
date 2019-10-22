@@ -16,6 +16,10 @@
 #include "DigitalOut.h"
 #include "PwmOut.h"
 #include <list>
+#if __MBED__==1
+#include "mdf_api_cortex.h"
+#endif
+
 
    
 class Led{
@@ -39,7 +43,7 @@ class Led{
      *  @param level Nivel de activación lógico 
      *  @param period Periodo del del pwm en milisegundos
      */
-    Led(PinName led, LedType type, LedLogicLevel level = OnIsHighLevel, uint32_t period_ms = 1);
+    Led(PinName32 led, LedType type, LedLogicLevel level = OnIsHighLevel, uint32_t period_ms = 1);
     ~Led();
   
   
@@ -130,7 +134,7 @@ class Led{
     static const uint32_t GlitchFilterTimeoutUs = 20000;    /// Por defecto 20ms de timeout antiglitch desde el cambio de nivel
     static const uint8_t MaxBlinkCount = 16;				/// Máximo nº de parpadeos en la lista de parpadeos consecutivos
 
-    uint32_t _id;                                           /// Led id. Coincide con el PinName asociado
+    uint32_t _id;                                           /// Led id. Coincide con el PinName32 asociado
     PwmOut* _out;                                          /// Salida pwm
     DigitalOut* _out_01;                                   /// Salida binaria 0 1
     double _intensity;                                      /// Nivel de intensidad

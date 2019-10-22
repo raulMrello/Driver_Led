@@ -21,7 +21,7 @@
 
 
 //------------------------------------------------------------------------------------
-Led::Led(PinName led, LedType type, LedLogicLevel level, uint32_t period_ms){
+Led::Led(PinName32 led, LedType type, LedLogicLevel level, uint32_t period_ms){
 	// Crea objeto
     _id = (uint32_t)led;
     _debug = false;
@@ -36,10 +36,10 @@ Led::Led(PinName led, LedType type, LedLogicLevel level, uint32_t period_ms){
     	_blinks[i] = 0;
     }
     if(_type == LedOnOffType){
-        _out_01 = new DigitalOut(led);
+        _out_01 = new DigitalOut((PinName)led);
     }
     else{
-        _out = new PwmOut(led);
+        _out = new PwmOut((PinName)led);
         _out->period_ms(_period_ms);
     }    
     _level = level;      

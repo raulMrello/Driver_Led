@@ -24,10 +24,10 @@
 #if ESP_PLATFORM == 1
 void (*syslog_print)(const char*level, const char* tag, const char* format, ...) = NULL;
 
-#define PinName_LED_RED_REMOTE		(PinName)8 	//PA_8
-#define PinName_LED_GREEN_REMOTE	(PinName)9 	//PA_9
-#define PinName_LED_WHITE_REMOTE	(PinName)10 //PA_10
-const PinName LedArray[] =	{PinName_LED_RED_REMOTE, PinName_LED_GREEN_REMOTE, PinName_LED_WHITE_REMOTE};
+#define PinName32_LED_RED_REMOTE		(PinName32)8 	//PA_8
+#define PinName32_LED_GREEN_REMOTE	(PinName32)9 	//PA_9
+#define PinName32_LED_WHITE_REMOTE	(PinName32)10 //PA_10
+const PinName32 LedArray[] =	{PinName32_LED_RED_REMOTE, PinName32_LED_GREEN_REMOTE, PinName32_LED_WHITE_REMOTE};
 
 /** Requerido para test unitarios STM32 */
 #elif __MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_Driver_Led)
@@ -35,10 +35,10 @@ const PinName LedArray[] =	{PinName_LED_RED_REMOTE, PinName_LED_GREEN_REMOTE, Pi
 /// Configuración MBED_API_uSerial
 
 // Configuración leds
-#define PinName_LED_RED_LOCAL		PA_8
-#define PinName_LED_GREEN_LOCAL		PA_9
-#define PinName_LED_WHITE_LOCAL		PA_10
-const PinName LedArray[] = {PinName_LED_RED_LOCAL, PinName_LED_GREEN_LOCAL, PinName_LED_WHITE_LOCAL};
+#define PinName32_LED_RED_LOCAL		PA_8
+#define PinName32_LED_GREEN_LOCAL		PA_9
+#define PinName32_LED_WHITE_LOCAL		PA_10
+const PinName32 LedArray[] = {PinName32_LED_RED_LOCAL, PinName32_LED_GREEN_LOCAL, PinName32_LED_WHITE_LOCAL};
 #endif
 
 #define LED_COUNT				3
