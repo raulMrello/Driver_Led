@@ -102,6 +102,13 @@ void Led::on(uint32_t ms_duration, uint8_t intensity, uint32_t ms_ramp){
     }
     // si hay rampa, la inicia
     else{
+        if(_type == LedOnOffType){
+           	uint8_t value  = (intensity != 0)? 1 : 0;
+			value = (_level == OnIsHighLevel)? value : (1 - value);
+			_max_intensity = value;
+        }
+        else
+            _max_intensity = convertIntensity(intensity);
         _action = LedGoingOn;
         _tick_ramp.attach_us(callback(this, &Led::rampOnCb), (ms_ramp * 1000));
     }    
@@ -146,6 +153,15 @@ void Led::off(uint32_t ms_duration, uint8_t intensity, uint32_t ms_ramp){
     }
     // si hay rampa, la inicia
     else{
+       
+        if(_type == LedOnOffType){
+        	uint8_t value  = (intensity != 0)? 1 : 0;
+        	value = (_level == OnIsHighLevel)? value : (1 - value);
+        	_min_intensity = value;
+        }
+        else{
+            _min_intensity = convertIntensity(intensity);            
+        }
         _action = LedGoingOff;
         _tick_ramp.attach_us(callback(this, &Led::rampOffCb), (ms_ramp * 1000));
     }    
@@ -154,7 +170,7 @@ void Led::off(uint32_t ms_duration, uint8_t intensity, uint32_t ms_ramp){
 
 //------------------------------------------------------------------------------------
 void Led::blink(uint32_t ms_blink_on, uint32_t ms_blink_off, uint32_t ms_duration, uint8_t intensity_on, uint8_t intensity_off){
-    // si no hay temporizaciones de On y Off, no permite la ejecución
+    // si no hay temporizaciones de On y Off, no permite la ejecuciï¿½n
     if(ms_blink_on == 0 && ms_blink_off == 0){
         return;
     }
@@ -242,7 +258,7 @@ void Led::_executeBlinkMode(){
 //------------------------------------------------------------------------------------
 void Led::rampOffCb(){
     if(_level == OnIsHighLevel){
-        _intensity -= (_max_intensity/10);
+        _intensity -= ((_max_intensity-_min_intensity)/100);
         if(_intensity <= _min_intensity){
             _tick_ramp.detach();
             _intensity = _min_intensity;
@@ -252,10 +268,10 @@ void Led::rampOffCb(){
         }
     }
     else{
-        _intensity += (_max_intensity/10);
-        if(_intensity >= _max_intensity){
+        _intensity += ((_max_intensity-_min_intensity)/100);
+        if(_intensity >= _min_intensity){
             _tick_ramp.detach();
-            _intensity = _max_intensity;
+            _intensity = _min_intensity;
             _action = LedGoOffEnd;
             _out->write(_intensity);
             return;
@@ -268,7 +284,7 @@ void Led::rampOffCb(){
 //------------------------------------------------------------------------------------
 void Led::rampOnCb(){
     if(_level == OnIsHighLevel){
-        _intensity += (_max_intensity/10);
+        _intensity += (_max_intensity/100);
         if(_intensity >= _max_intensity){
             _tick_ramp.detach();
             _intensity = _max_intensity;
@@ -278,7 +294,7 @@ void Led::rampOnCb(){
         }
     }
     else{
-        _intensity -= (_max_intensity/10);
+        _intensity -= (_max_intensity/100);
         if(_intensity <= _min_intensity){
             _tick_ramp.detach();
             _intensity = _min_intensity;
@@ -326,7 +342,7 @@ void Led::temporalCb(){
     _tick_ramp.detach();
     _tick_duration.detach();    
     _stat = _bkp_stat;
-    // si está activado el modo blink en cascada, lo procesa
+    // si estï¿½ activado el modo blink en cascada, lo procesa
     if(_num_blinks > 0){
     	_executeBlinkMode();
     }
