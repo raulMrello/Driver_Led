@@ -12,38 +12,34 @@
 
 #include "mbed.h"
 #include "AppConfig.h"
+#include "unity.h"
+#include "Heap.h"
+#include "Led.h"
+#include "xLed.h"
+#include "mbed_api_userial.h"
 
 #if ESP_PLATFORM == 1 || (__MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_Driver_Led))
 
 /** Requerido para test unitarios ESP-MDF */
 #if ESP_PLATFORM == 1
-#include "unity.h"
-#include "Heap.h"
 void (*syslog_print)(const char*level, const char* tag, const char* format, ...) = NULL;
 
-#define PinName_LED_RED_REMOTE		(PinName)8 	//PA_8
-#define PinName_LED_GREEN_REMOTE	(PinName)9 	//PA_9
-#define PinName_LED_WHITE_REMOTE	(PinName)10 //PA_10
-const PinName LedArray[] =	{PinName_LED_RED_REMOTE, PinName_LED_GREEN_REMOTE, PinName_LED_WHITE_REMOTE};
+#define PinName32_LED_RED_REMOTE		(PinName32)8 	//PA_8
+#define PinName32_LED_GREEN_REMOTE	(PinName32)9 	//PA_9
+#define PinName32_LED_WHITE_REMOTE	(PinName32)10 //PA_10
+const PinName32 LedArray[] =	{PinName32_LED_RED_REMOTE, PinName32_LED_GREEN_REMOTE, PinName32_LED_WHITE_REMOTE};
 
 /** Requerido para test unitarios STM32 */
 #elif __MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_Driver_Led)
-#include "unity.h"
-#include "Heap.h"
 #include "unity_test_runner.h"
 /// Configuración MBED_API_uSerial
 
 // Configuración leds
-#define PinName_LED_RED_LOCAL		PA_8
-#define PinName_LED_GREEN_LOCAL		PA_9
-#define PinName_LED_WHITE_LOCAL		PA_10
-const PinName LedArray[] = {PinName_LED_RED_LOCAL, PinName_LED_GREEN_LOCAL, PinName_LED_WHITE_LOCAL};
+#define PinName32_LED_RED_LOCAL		PA_8
+#define PinName32_LED_GREEN_LOCAL		PA_9
+#define PinName32_LED_WHITE_LOCAL		PA_10
+const PinName32 LedArray[] = {PinName32_LED_RED_LOCAL, PinName32_LED_GREEN_LOCAL, PinName32_LED_WHITE_LOCAL};
 #endif
-
-#include "Led.h"
-#include "xLed.h"
-#include "mbed_api_userial.h"
-#include "SerialMon.h"
 
 #define LED_COUNT				3
 
@@ -68,9 +64,6 @@ bool are_locals = false;
 static xLed* xled[LED_COUNT];
 bool are_remotes = false;
 
-/** Puerto serie para pruebas con MBED_API_uSerial */
-static SerialMon* g_serial = NULL;
-
 /** Librería userial */
 static MBED_API_uSerial mbed_api_userial;
 
@@ -83,33 +76,12 @@ static MBED_API_uSerial mbed_api_userial;
 
 //------------------------------------------------------------------------------------
 static void test_led_init_userial(){
-	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Inicializando Puerto serie");
-	#if ESP_PLATFORM==1
-	g_serial = new SerialMon(uSerial_TX_PIN, uSerial_RX_PIN, uSerial_TX_BUFFER_SIZE, uSerial_RX_BUFFER_SIZE, uSerial_SERIAL_BAUDRATE, "uSerial", UART_NUM_1);
-	#elif __MBED__ == 1
-	g_serial = new SerialMon(uSerial_TX_PIN, uSerial_RX_PIN, uSerial_TX_BUFFER_SIZE, uSerial_RX_BUFFER_SIZE, uSerial_SERIAL_BAUDRATE, "uSerial");
-	#endif
-	TEST_ASSERT_NOT_NULL(g_serial);
-	g_serial->setLoggingLevel(ESP_LOG_WARN);
-	g_serial->cfgStreamAnalyzer(MBED_API_uSerial::ProtocolHeaderValue,
-								MBED_API_uSerial::ProtocolFooterValue,
-								1,
-								sizeof(uint16_t),
-								true,
-								uSerial_RX_BUFFER_SIZE);
-	g_serial->start(osPriorityNormal, OS_STACK_SIZE);
-	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Esperando a que SerialMon esté operativo");
-	while(!g_serial->isReady()){
-		Thread::wait(100);
-	}
-	DEBUG_TRACE_I(_EXPR_, _MODULE_, "SerialMon iniciada!!!");
-
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Inicializando MBED_API_uSerial");
 
 	#if ESP_PLATFORM==1
-	int result = mbed_api_userial.init(static_cast<ISerial*>(g_serial), uSerial_MAX_USERIAL_MSG_SIZE, uSerial_CPU::CPU_ONBOARD_ESP32);
+	int result = mbed_api_userial.init(uSerial_CPU::CPU_ONBOARD_ESP32);
 	#elif __MBED__ == 1
-	int result = mbed_api_userial.init(static_cast<ISerial*>(g_serial), uSerial_MAX_USERIAL_MSG_SIZE, uSerial_CPU::CPU_ONBOARD_STM32);
+	int result = mbed_api_userial.init(uSerial_CPU::CPU_ONBOARD_STM32);
 	#endif
 	TEST_ASSERT_EQUAL(result, 0);
 
@@ -253,13 +225,13 @@ TEST_CASE("Destruye los leds", "[Driver_Led]") {
 //------------------------------------------------------------------------------------
 
 
-//-----------------------------------------------------------------------------
+#if __MBED__ == 1 && defined(ENABLE_TEST_DEBUGGING) && defined(ENABLE_TEST_Driver_Led)
 void firmwareStart(){
 	esp_log_level_set(_MODULE_, ESP_LOG_DEBUG);
 	DEBUG_TRACE_I(_EXPR_, _MODULE_, "Inicio del programa");
 	Heap::setDebugLevel(ESP_LOG_DEBUG);
 	unity_run_menu();
 }
-
+#endif
 
 #endif
